@@ -1,0 +1,190 @@
+# Default values for psmdb-cluster.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+pause: false
+standby: false
+disableAutofail: false
+keepData: true
+keepBackups: true
+restoreFrom: false
+restoreOpts: false
+defaultUser: pguser
+defaultDatabase: pgdb
+targetPort: "5432"
+
+image:
+  repo: percona/percona-postgresql-operator
+  pgver: ppg14
+
+sslCA: ""
+sslSecretName: ""
+sslReplicationSecretName: ""
+tlsOnly: false
+
+bucket:
+  key:
+  secret:
+  json:
+# Replace default AWS S3 CA with a custom one here
+  s3ca:
+
+pgPrimary:
+  image: ""
+  resources:
+    requests:
+      memory: "128Mi"
+  tolerations: []
+  volumeSpec:
+    size: 10G
+    accessmode: ReadWriteOnce
+    storagetype: dynamic
+    storageclass: "hostpath"
+  expose:
+    serviceType: ClusterIP
+    loadBalancerSourceRanges: []
+    loadBalancerIP:
+  customconfig: pg-db-custom-config
+  affinity:
+    antiAffinityType: preferred
+    #nodeAffinityType:
+    #nodeLabel:
+    #advanced:
+    #  nodeAffinity:
+    #    requiredDuringSchedulingIgnoredDuringExecution:
+    #      nodeSelectorTerms:
+    #      - matchExpressions:
+    #        - key: topology.kubernetes.io/zone
+    #          operator: In
+    #          values:
+    #          - "1"
+
+pmm:
+  enabled: false
+  image:
+    repository: percona/pmm-client
+    tag: 2.36.0
+  serverHost: monitoring-service
+  resources:
+    requests:
+      memory: 200M
+      cpu: 500m
+
+backup:
+  image: ""
+  backrestRepoImage: ""
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "48Mi"
+  volumeSpec:
+    size: 10G
+    accessmode: ReadWriteOnce
+    storagetype: dynamic
+    storageclass: "hostpath"
+  schedule:
+    - name: "sat-night-backup"
+      schedule: "0 0 * * 6"
+      keep: 3
+      type: full
+      storage: local
+      #backrestOpts: repo1-retention-full --repo1-path=/var/lib/pgbackrest --pg1-path=/var/lib/pgsql/data --pg1-user=postgres --pg1-port=5432
+    - name: "hourly"
+      schedule: "0 0-23 * * *"
+      keep: 3
+      type: diff
+      storage: local
+      #backrestOpts: --repo1-path=/var/lib/pgbackrest --pg1-path=/var/lib/pgsql/data --pg1-user=postgres --pg1-port=5432
+  #antiAffinityType:
+  #affinity:
+  #  antiAffinityType: preferred
+    #advanced:
+    #  nodeAffinity:
+    #    requiredDuringSchedulingIgnoredDuringExecution:
+    #      nodeSelectorTerms:
+    #      - matchExpressions:
+    #        - key: topology.kubernetes.io/zone
+    #          operator: NotIn
+    #          values:
+    #          - "3"
+
+pgBouncer:
+  image: ""
+  size: 3
+  resources:
+    requests:
+      cpu: "1"
+      memory: "128Mi"
+    limits:
+      cpu: "2"
+      memory: "512Mi"
+  expose:
+    serviceType: ClusterIP
+    loadBalancerSourceRanges: []
+    loadBalancerIP:
+  exposePostgresUser: true
+  #affinity:
+  #  advanced:
+  #    podAntiAffinity:
+  #      preferredDuringSchedulingIgnoredDuringExecution:
+  #      - podAffinityTerm:
+  #          labelSelector:
+  #            matchExpressions:
+  #            - key: topology.kubernetes.io/zone
+  #              operator: In
+  #              values:
+  #              - "1"
+  #              - "2"
+  #              - "3"
+  #          topologyKey: kubernetes.io/hostname
+  #        weight: 100
+
+replicas:
+  size: 2
+  resources:
+    requests:
+      cpu: "2000m"
+      memory: "4096Mi"
+  volumeSpec:
+    accessmode: ReadWriteOnce
+    size: 10G
+    storagetype: dynamic
+    storageclass: "hostpath"
+  enableSyncStandby: false
+  expose:
+    serviceType: ClusterIP
+  customconfig: pg-db-custom-config
+  #affinity:
+  #  advanced:
+  #    podAntiAffinity:
+  #      preferredDuringSchedulingIgnoredDuringExecution:
+  #      - weight: 100
+  #        podAffinityTerm:
+  #          labelSelector:
+  #            matchExpressions:
+  #            - key:  topology.kubernetes.io/zone
+  #              operator: In
+  #              values:
+  #              - "2"
+  #          topologyKey: kubernetes.io/hostname
+
+pgBadger:
+  enabled: false
+  image: ""
+  port: 10000
+
+secrets:
+  name:
+  # replication user password
+  primaryuser: primaryuser@
+  # superuser password
+  postgres: postgres@
+  # pgbouncer user password
+  pgbouncer: pgbouncer@
+  # pguser user password
+  pguser: pguser@
+
+versionService:
+  url: "https://check.percona.com"
+  apply: "disabled"
+  schedule: "0 4 * * *"
