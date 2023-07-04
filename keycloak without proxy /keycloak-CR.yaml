@@ -1,0 +1,42 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+  namespace: keycloak
+spec:
+  #image: "quay.io/keycloak/keycloak:21.1.1"
+  ingress:
+    enabled: false
+  db:
+    vendor: postgres
+    usernameSecret:
+      name: pg-db-pguser-secret
+      key: username
+    passwordSecret:
+      name: pg-db-pguser-secret
+      key: password
+    host: pg-db.keycloak.svc
+    database: pgdb
+    port: 5432
+    schema: public
+    poolInitialSize: 1
+    poolMinSize: 2
+    poolMaxSize: 3
+  http:
+    #httpEnabled: true
+    httpsPort: 8443
+    #httpPort: 8080
+    tlsSecret: example-tls-secret
+  hostname:
+    # hostname is optional
+    hostname: keycloak.mvp.com
+    #strict true is for production if disabled and also strictBackchannel is disabled and httpEnabled: true then Keycloak works on port 8080 else now
+    #strict: false
+    strictBackchannel: false 
+  transaction:
+    xaEnabled: false
+  additionalOptions:
+    # only needed in production and front ended by nginx proxy
+    - name: proxy
+      value: edge
+  #    value: none
