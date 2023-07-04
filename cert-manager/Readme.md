@@ -8,3 +8,5 @@ helm install \
   --create-namespace \
   --version v1.12.0 \
   --set installCRDs=true
+
+install Issers.
