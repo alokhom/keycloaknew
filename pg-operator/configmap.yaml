@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pg-db-custom-config
+  namespace: keycloak
+data:
+  postgres-ha.yaml: |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: pg-db-custom-config
+      namespace: keycloak
+    data:
+      postgres-ha.yaml: |
+        bootstrap:
+          dcs:
+            postgresql:
+              parameters:
+                max_connections: 30
+                password_encryption: scram-sha-256
+                archive_command: ource /opt/crunchy/bin/postgres-ha/pgbackrest/pgbackrest-set-env.sh
+                  && pgbackrest archive-push "%p"
+                archive_mode: true
+                archive_timeout: 60
+                logging_collector: on
+                log_directory: pg_log
+                log_min_duration_statement: 60000
+                log_statement: none
+                max_wal_senders: 6
+                shared_buffers: 128MB
+                shared_preload_libraries: pgaudit.so,pg_stat_statements.so
+                temp_buffers: 8MB
+                unix_socket_directories: /tmp
+                wal_level: logical
+                work_mem: 4MB
+              recovery_conf:
+                restore_command: source /opt/crunchy/bin/postgres-ha/pgbackrest/pgbackrest-set-env.sh
+                  && pgbackrest archive-get %f "%p"
+              use_pg_rewind: true
+          pg_hba:
+          # local is for unix dommain socket connections only
+          - local all postgres peer
+          - host replication primaryuser 0.0.0.0/0 md5
+          - host all primaryuser 0.0.0.0/0 reject
+          - host all all 0.0.0.0/0 md5
+          #users:
+          #  admin: alok
+      setup.sql: |
+        CREATE USER testuser2 LOGIN;
+        ALTER USER testuser2 PASSWORD 'customconfpass';
+        CREATE DATABASE db1;
+        GRANT ALL PRIVILEGES ON DATABASE db1 TO testuser2;
+       
