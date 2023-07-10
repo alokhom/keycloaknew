@@ -1,0 +1,1 @@
+# This is for a google VM with port exposed as per google commands and public IP used in the keycloak config.
